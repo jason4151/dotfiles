@@ -10,6 +10,9 @@ source /usr/local/opt/powerlevel10k/powerlevel10k.zsh-theme
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
+# SSH aliases
+[[ ! -f ~/.aliases.ssh ]] || source ~/.aliases.ssh
+
 # Path
 export PATH=$HOME/bin:/usr/local/bin:/usr/local/sbin:$PATH
 
@@ -41,14 +44,3 @@ alias tfa='terraform apply'
 alias tfwl='terraform workspace list'
 alias tfwn='terraform workspace new'
 alias tfws='terraform workspace select'
-
-# SSH
-#ssh-addkeys() { for i in $(find /Volumes/Private/Keys -name "*.pem"); do ssh-add --apple-use-keychain $i; done }
-alias pimdev='ssh ubuntu@10.15.48.226 -i ~/.ssh/id_pim'
-alias pimqa='ssh ubuntu@10.15.49.80 -i ~/.ssh/id_pim'
-alias pimprod='ssh ubuntu@10.15.50.163 -i ~/.ssh/id_pim'
-alias matillion='ssh centos@10.15.53.51 -i ~/.ssh/id_matillion'
-alias jenkins-turbo-1='ssh ec2-user@10.15.3.129 -i ~/.ssh/id_jenkins-turbo'
-alias jenkins-turbo-2='ssh ec2-user@10.15.3.216 -i ~/.ssh/id_jenkins-turbo'
-alias jenkins-web-1='ssh ec2-user@10.15.3.149 -i ~/.ssh/id_jenkins-web'
-alias waterbottles='ssh ubuntu@10.173.198.166 -i ~/.ssh/id_sbc-water-bottles'
