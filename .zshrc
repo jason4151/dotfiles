@@ -28,29 +28,9 @@ alias ll='ls -lah'
 # macOS maintenance
 maintenance() {
   sudo periodic daily weekly monthly
-  #sudo atsutil databases -remove
-  #sudo rm -rf ~/Library/{Caches,Logs}/*
   defaults write com.apple.dock ResetLaunchPad -bool true; killall Dock
   sudo killall -HUP mDNSResponder;sudo killall mDNSResponderHelper;sudo dscacheutil -flushcache
 }
-
-# Update Homebrew
-brewski() {
-  brew update
-  brew upgrade
-  brew outdated --cask 
-  brew doctor
-  brew missing
-  brew cleanup -s
-}
-
-# AWS SSO
-#aws-profile(){
-#  aws sso login --profile ${1}
-#  yawsso -p ${1}
-#  export AWS_PROFILE=${1}
-#  terraform workspace select ${1} || terraform workspace new ${1}
-#}
 
 # Terraform
 alias tf='terraform'
