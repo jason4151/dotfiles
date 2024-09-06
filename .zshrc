@@ -23,6 +23,7 @@ alias pwgen='pwgen -sy 32 1'
 alias p='cd ~/Projects'
 alias t='cd ~/Projects/terraform'
 alias ave="unset AWS_VAULT && aws-vault exec $1"
+alias kubectl="minikube kubectl --"
 
 export CLICOLOR=1
 export LSCOLORS=ExGxBxDxCxEgEdxbxgxcxd
