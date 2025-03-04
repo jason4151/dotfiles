@@ -18,22 +18,17 @@ else
     git pull origin main
 fi
 
-# Symlink dotfiles (only regular files starting with .)
+# Symlink dotfiles (only specific files)
 echo "Symlinking dotfiles from $DOTFILES_DIR..."
-for file in "$DOTFILES_DIR"/.[!.]*; do
-    # Check if it's a regular file (not a dir or symlink)
-    if [ -f "$file" ]; then
-        filename=$(basename "$file")
-        # Skip the script itself
-        if [[ "$filename" == "setup-dotfiles.sh" ]]; then
-            continue
+for file in bashrc bash_profile; do
+    source_file="$DOTFILES_DIR/$file"
+    target_file="$HOME/.$file"
+    if [ -f "$source_file" ]; then
+        if [ -e "$target_file" ] && [ ! -L "$target_file" ]; then
+            echo "Backing up existing $target_file to $target_file.bak"
+            mv "$target_file" "$target_file.bak"
         fi
-        target="$HOME/$filename"
-        if [ -e "$target" ] && [ ! -L "$target" ]; then
-            echo "Backing up existing $target to $target.bak"
-            mv "$target" "$target.bak"
-        fi
-        ln -sf "$file" "$target"
+        ln -sf "$source_file" "$target_file"
     fi
 done
 
