@@ -99,14 +99,21 @@ alias mdash='minikube dashboard'
 alias msvc='minikube service'
 
 #=== Terraform Tools ===#
-alias tf='terraform'
-alias tfv='terraform validate'
-alias tfi='terraform init'
-alias tfp='terraform plan'
-alias tfa='terraform apply'
-alias tfwl='terraform workspace list'
-alias tfwn='terraform workspace new'
-alias tfws='terraform workspace select'
+# Use OpenTofu if installed, otherwise fall back to Terraform
+if command -v tofu >/dev/null 2>&1; then
+    TF_CMD='tofu'
+else
+    TF_CMD='terraform'
+fi
+
+alias tf="$TF_CMD"
+alias tfv="$TF_CMD validate"
+alias tfi="$TF_CMD init"
+alias tfp="$TF_CMD plan"
+alias tfa="$TF_CMD apply"
+alias tfwl="$TF_CMD workspace list"
+alias tfwn="$TF_CMD workspace new"
+alias tfws="$TF_CMD workspace select"
 
 #=== AWS Tools ===#
 # AWS CLI shortcuts
