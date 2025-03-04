@@ -16,6 +16,6 @@ This repository contains my personal dotfiles (e.g., `.bashrc`, `.bash_profile`)
 ### Deploy to Each System
 On each machine (CentOS, Ubuntu, macOS), run the setup script to clone or update the repo and symlink the dotfiles:
 
+### Download and run the script
 ```bash
-# Download and run the script
 bash <(curl -s https://raw.githubusercontent.com/jason4151/dot-files/main/setup-dotfiles.sh)
