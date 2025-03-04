@@ -23,19 +23,10 @@ HISTFILESIZE=20000
 # Prompt: User@host:directory with color
 PS1='\[\e[32m\]\u@\h\[\e[m\]:\[\e[33m\]\w\[\e[m\]\$ '
 
-# Default tools and PATH
+# Default tools
 export EDITOR='vim'
 export VISUAL="$EDITOR"
 export PAGER='less'
-export PATH="$HOME/bin:$HOME/.local/bin:/usr/local/sbin:$PATH"
-if [[ "$OSTYPE" == "darwin"* ]] && command -v brew >/dev/null 2>&1; then
-    export PATH="/opt/homebrew/bin:$PATH"  # Homebrew on Apple Silicon
-fi
-
-# tfswitch integration (if installed)
-if command -v tfswitch >/dev/null 2>&1; then
-    alias tfs='tfswitch'  # Switch Terraform versions
-fi
 
 #=== Core Aliases ===#
 alias rm='rm -i'
@@ -133,6 +124,93 @@ alias avl='aws-vault login'  # Login to AWS console
 alias ave='aws-vault exec'  # Execute command with profile
 alias avs='aws-vault exec -- aws sts get-caller-identity'  # Show identity with vault
 
+# SSM-based AWS tools
+aws_jumpbox() {
+    local profile="$1"
+    local aws_cmd="aws"
+    if [ -n "$profile" ]; then
+        if ! command -v aws-vault >/dev/null 2>&1; then
+            echo "Error: aws-vault not installed."
+            return 1
+        fi
+        aws_cmd="aws-vault exec $profile -- aws"
+    fi
+    if ! $aws_cmd sts get-caller-identity >/dev/null 2>&1; then
+        echo "Error: AWS CLI not authenticated. Configure credentials or use aws-vault."
+        return 1
+    fi
+    AWS_ACCOUNT_ID=$($aws_cmd sts get-caller-identity --query "Account" --output text)
+    if [ -z "$AWS_ACCOUNT_ID" ]; then
+        echo "Error: Failed to retrieve AWS account ID."
+        return 1
+    fi
+    AWS_ACCOUNT_NAME=$($aws_cmd organizations describe-account --account-id "$AWS_ACCOUNT_ID" --query "Account.Name" --output text 2>/dev/null || echo "Unknown")
+    echo "Connected to AWS account ID: $AWS_ACCOUNT_ID (Name: $AWS_ACCOUNT_NAME)"
+    AWS_INSTANCE_ID=$($aws_cmd ec2 describe-instances --filters "Name=tag:Name,Values=jump-box" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId]" --output text | head -n 1)
+    if [ -z "$AWS_INSTANCE_ID" ]; then
+        echo "Error: No running instance found with tag Name=jump-box."
+        return 1
+    fi
+    echo "Starting SSM session to jump-box instance: $AWS_INSTANCE_ID"
+    $aws_cmd ssm start-session --target "$AWS_INSTANCE_ID" --document-name AWS-StartInteractiveCommand --parameters command="bash -l"
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to start SSM session."
+        return 1
+    fi
+}
+
+aws_portforward() {
+    local profile="$1"
+    local aws_cmd="aws"
+    if [ -n "$profile" ]; then
+        if ! command -v aws-vault >/dev/null 2>&1; then
+            echo "Error: aws-vault not installed."
+            return 1
+        fi
+        aws_cmd="aws-vault exec $profile -- aws"
+    fi
+    if ! $aws_cmd sts get-caller-identity >/dev/null 2>&1; then
+        echo "Error: AWS CLI not authenticated. Configure credentials or use aws-vault."
+        return 1
+    fi
+    local aws_account_id=$($aws_cmd sts get-caller-identity --query "Account" --output text)
+    if [ -z "$aws_account_id" ]; then
+        echo "Error: Failed to retrieve AWS account ID."
+        return 1
+    fi
+    local aws_account_name=$($aws_cmd organizations describe-account --account-id "$aws_account_id" --query "Account.Name" --output text 2>/dev/null || echo "Unknown")
+    echo "Connected to AWS account ID: $aws_account_id (Name: $aws_account_name)"
+    local remote_hostname
+    local port_number
+    read -p "Enter the remote hostname: " remote_hostname
+    read -p "Enter the port number to be used: " port_number
+    if [ -z "$remote_hostname" ] || [ -z "$port_number" ]; then
+        echo "Error: Hostname and port number are required."
+        return 1
+    fi
+    echo "Retrieving instance ID for jump-box..."
+    local instance_id=$($aws_cmd ec2 describe-instances --filters "Name=tag:Name,Values=jump-box" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].[InstanceId]" --output text | head -n 1)
+    if [ -z "$instance_id" ]; then
+        echo "Error: No running jump-box instance found."
+        return 1
+    fi
+    echo "Starting port forwarding from localhost:$port_number to $remote_hostname:$port_number via $instance_id..."
+    $aws_cmd ssm start-session \
+        --target "$instance_id" \
+        --document-name AWS-StartPortForwardingSessionToRemoteHost \
+        --parameters "{\"host\":[\"$remote_hostname\"],\"portNumber\":[\"$port_number\"],\"localPortNumber\":[\"$port_number\"]}" \
+        --region "${AWS_REGION:-us-west-2}" &
+    local ssm_pid=$!
+    echo "Port forwarding started (PID: $ssm_pid). Use Ctrl+C to stop."
+    wait $ssm_pid
+    echo "Port forwarding session ended."
+}
+
+# tfswitch integration (if installed)
+if command -v tfswitch >/dev/null 2>&1; then
+    alias tfs='tfswitch'  # Switch Terraform versions
+fi
+
 #=== Custom Functions ===#
 findnewer() {
     [ $# -ne 2 ] && { echo "Usage: findnewer DIR DATE (e.g., 2012-12-05)"; return 1; }
@@ -192,6 +270,41 @@ set_macos_bash() {
     else
         echo "Error: /opt/homebrew/bin/bash not found. Install Bash via Homebrew first."
     fi
+}
+
+gh_add_repos_to_team() {
+    local permission="${1:-pull}"
+    local org="${2:-MyOrg}"
+    local team_slug="${3:-read-only-all-repos}"
+    if ! gh auth status >/dev/null 2>&1; then
+        echo "Error: GitHub CLI not authenticated. Run 'gh auth login' first."
+        return 1
+    fi
+    echo "Fetching repositories from $org..."
+    local repos=$(gh repo list "$org" --limit 1000 --json nameWithOwner -q '.[] | .nameWithOwner') || {
+        echo "Error: Failed to list repositories for $org."
+        return 1
+    }
+    echo "Adding $team_slug to repositories with $permission permission..."
+    echo "$repos" | while IFS= read -r repo; do
+        if [ -z "$repo" ]; then
+            continue
+        fi
+        echo "Processing $repo..."
+        local response=$(gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/orgs/$org/teams/$team_slug/repos/$repo" \
+            -f "permission=$permission" 2>&1)
+        if [ $? -eq 0 ]; then
+            echo "Successfully added $team_slug to $repo"
+        else
+            local status_code=$(echo "$response" | grep -o "HTTP/[0-9.]\+ [0-9]\+" | awk '{print $2}' || echo "Unknown")
+            echo "Error: Failed to add $team_slug to $repo (HTTP $status_code)"
+            echo "Response: $response"
+        fi
+    done
 }
 
 #=== macOS-Specific ===#
