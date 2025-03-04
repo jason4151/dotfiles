@@ -9,7 +9,7 @@ This repository contains my personal dotfiles (e.g., `bashrc`, `bash_profile`) f
   - Ubuntu: `sudo apt install git`
   - macOS: `brew install git`
 - **SSH Key**: Added to GitHub for passwordless access.
-  - Generate: `ssh-keygen -t rsa -b 4096 -C "your.email@example.com"`
+  - Generate: `ssh-keygen -t rsa -b 4096 -C "jason4151@MBP"`
   - Add to GitHub: Copy `~/.ssh/id_rsa.pub` to [GitHub SSH settings](https://github.com/settings/keys).
 
 ## Setup Instructions
