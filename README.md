@@ -1,6 +1,6 @@
 # Dot Files
 
-This repository contains my personal dotfiles (e.g., `bashrc`, `bash_profile`) for a consistent shell environment across CentOS Stream 10, Ubuntu 24.04, and macOS Sequoia. The `setup_dotfiles.sh` script automates cloning, updating, symlinking, and sourcing these files from `~/Projects/dotfiles` to your home directory.
+This repository contains my personal dotfiles (e.g., `bashrc`, `bash_profile`) for a consistent shell environment across CentOS Stream 10, Ubuntu 24.04, and macOS Sequoia. The `setup_dotfiles.sh` script automates cloning, updating, symlinking, and sourcing these files from `~/Projects/dotfiles` to my home directory.
 
 ## Prerequisites
 
