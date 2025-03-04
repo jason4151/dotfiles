@@ -80,14 +80,19 @@ alias cpr='rsync -ah --progress' # Simplified rsync
 alias pwgen='pwgen -sy 32 1'
 
 #=== Kubernetes Tools ===#
-# kubectl aliases
-alias k='kubectl'
-alias kg='kubectl get'
-alias kd='kubectl describe'
-alias kl='kubectl logs'
-alias kx='kubectl exec -it'
-alias ka='kubectl apply -f'
-alias kdel='kubectl delete'
+# Use minikube kubectl if minikube is installed, otherwise plain kubectl
+if command -v minikube >/dev/null 2>&1; then
+    KUBE_CMD='minikube kubectl --'
+else
+    KUBE_CMD='kubectl'
+fi
+alias k="$KUBE_CMD"
+alias kg="$KUBE_CMD get"
+alias kd="$KUBE_CMD describe"
+alias kl="$KUBE_CMD logs"
+alias kx="$KUBE_CMD exec -it"
+alias ka="$KUBE_CMD apply -f"
+alias kdel="$KUBE_CMD delete"
 
 # Minikube aliases
 alias m='minikube'
