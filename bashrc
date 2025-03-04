@@ -180,6 +180,20 @@ checktools() {
     done
 }
 
+set_macos_bash() {
+    if [ -f "/opt/homebrew/bin/bash" ]; then
+        if ! grep -q "/opt/homebrew/bin/bash" /etc/shells; then
+            echo "Adding /opt/homebrew/bin/bash to /etc/shells..."
+            echo "/opt/homebrew/bin/bash" | sudo tee -a /etc/shells >/dev/null
+        fi
+        echo "Setting default shell to /opt/homebrew/bin/bash..."
+        chsh -s /opt/homebrew/bin/bash
+        echo "Default shell updated. Open a new terminal to apply."
+    else
+        echo "Error: /opt/homebrew/bin/bash not found. Install Bash via Homebrew first."
+    fi
+}
+
 #=== macOS-Specific ===#
 if [[ "$OSTYPE" == "darwin"* ]]; then
     alias ls='ls -hF -G'  # macOS color support
