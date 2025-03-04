@@ -20,8 +20,17 @@ HISTCONTROL=ignoredups:erasedups
 HISTSIZE=10000
 HISTFILESIZE=20000
 
-# Prompt: User@host:directory with color
-PS1='\[\e[32m\]\u@\h\[\e[m\]:\[\e[33m\]\w\[\e[m\]\$ '
+# Prompt: User@host:directory with color, macOS-specific override
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # Check if hostname starts with USGMAC for work Mac
+    if [[ "$(hostname)" =~ ^USGMAC ]]; then
+        PS1='\[\e[32m\]\u@WorkMac\[\e[m\]:\[\e[33m\]\w\[\e[m\]\$ '
+    else
+        PS1='\[\e[32m\]\u@Mac\[\e[m\]:\[\e[33m\]\w\[\e[m\]\$ '
+    fi
+else
+    PS1='\[\e[32m\]\u@\h\[\e[m\]:\[\e[33m\]\w\[\e[m\]\$ '
+fi
 
 # Default tools
 export EDITOR='vim'
@@ -225,4 +234,4 @@ fi
 #=== Development Helpers ===#
 alias virc='vim ~/.bashrc && . ~/.bashrc'
 alias rpi='ssh rpi@raspberrypi.local'
-whatsmyip() { curl -s ifconfig.me; }
+whatsmyip() { curl -s ifconfig.me; echo; }
